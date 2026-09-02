@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailShield AI - Forensic Report</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: #1a1a2e; }
+            .report-container { max-width: 100%; padding: 0; }
+            .report-section { border: 1px solid #ddd; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="report-page">
+    <nav class="navbar no-print">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>MailShield AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/reports">Reports</a>
+        </div>
+    </nav>
+
+    <main class="report-container" id="reportContent">
+        <div class="report-header">
+            <div class="report-logo">
+                <i class="fas fa-shield-halved"></i>
+                <h1>MailShield AI</h1>
+            </div>
+            <h2>Forensic Investigation Report</h2>
+            <div class="report-meta" id="reportMeta"></div>
+        </div>
+
+        <div class="report-actions no-print">
+            <button class="btn btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Report
+            </button>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-upload"></i> New Analysis
+            </a>
+        </div>
+
+        <div id="reportSections"></div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const caseId = params.get('case_id');
+            if (!caseId) {
+                document.getElementById('reportSections').innerHTML =
+                    '<div class="report-section"><h3>No case ID provided. <a href="/">Go to Dashboard</a></h3></div>';
+                return;
+            }
+
+            fetch(`/api/report/${caseId}`)
+                .then(r => r.json())
+                .then(report => {
+                    document.getElementById('reportMeta').innerHTML = `
+                        <span>Report ID: <strong>${report.report_id}</strong></span>
+                        <span>Case: <strong>${report.case_id.substring(0, 8)}</strong></span>
+                        <span>Generated: <strong>${report.generated_at}</strong></span>
+                    `;
+
+                    const sections = document.getElementById('reportSections');
+                    sections.innerHTML = generateReportHTML(report);
+                })
+                .catch(err => {
+                    document.getElementById('reportSections').innerHTML =
+                        '<div class="report-section"><h3>Report not found. <a href="/">Go to Dashboard</a></h3></div>';
+                });
+        });
+
+        function generateReportHTML(report) {
+            let html = '';
+
+            // Case Information
+            html += `<div class="report-section">
+                <h3><i class="fas fa-folder-open"></i> Case Information</h3>
+                <div class="report-grid">
+                    <div class="report-field"><label>Case ID:</label><span>${report.case_id}</span></div>
+                    <div class="report-field"><label>Report ID:</label><span>${report.report_id}</span></div>
+                    <div class="report-field"><label>Analyzer Version:</label><span>${report.case_information.analyzer_version}</span></div>
+                    <div class="report-field"><label>Generated:</label><span>${report.case_information.generated_at}</span></div>
+                </div>
+            </div>`;
+
+            // File Information
+            html += `<div class="report-section">
+                <h3><i class="fas fa-file"></i> File Information</h3>
+                <div class="report-grid">
+                    <div class="report-field"><label>Filename:</label><span>${report.file_information.filename}</span></div>
+                    <div class="report-field"><label>SHA-256 Hash:</label><span class="mono">${report.file_information.file_hash}</span></div>
+                    <div class="report-field"><label>File Size:</label><span>${(report.file_information.file_size / 1024).toFixed(1)} KB</span></div>
+                    <div class="report-field"><label>Upload Time:</label><span>${report.file_information.upload_time}</span></div>
+                </div>
+            </div>`;
+
+            // Email Metadata
+            const em = report.email_metadata;
+            html += `<div class="report-section">
+                <h3><i class="fas fa-envelope"></i> Email Metadata</h3>
+                <div class="report-grid">
+                    <div class="report-field"><label>From:</label><span>${em.from}</span></div>
+                    <div class="report-field"><label>To:</label><span>${em.to}</span></div>
+                    <div class="report-field"><label>Subject:</label><span>${em.subject}</span></div>
+                    <div class="report-field"><label>Date:</label><span>${em.date}</span></div>
+                    <div class="report-field"><label>Reply-To:</label><span>${em.reply_to}</span></div>
+                    <div class="report-field"><label>Return-Path:</label><span>${em.return_path}</span></div>
+                    <div class="report-field"><label>Message-ID:</label><span class="mono">${em.message_id}</span></div>
+                    <div class="report-field"><label>Attachments:</label><span>${em.attachment_count}</span></div>
+                </div>
+            </div>`;
+
+            // Threat Score
+            const ts = report.threat_score;
+            html += `<div class="report-section threat-report">
+                <h3><i class="fas fa-gauge-high"></i> Threat Assessment</h3>
+                <div class="threat-display">
+                    <div class="threat-big-score ${ts.threat_level.toLowerCase()}">${ts.score}</div>
+                    <div class="threat-level-badge ${ts.threat_level.toLowerCase()}">${ts.threat_level}</div>
+                </div>
+                <div class="score-breakdown">
+                    ${ts.breakdown.map(b => `<div class="breakdown-item"><span>${b.factor}</span><span class="points">+${b.points}</span><span class="reason">${b.reason}</span></div>`).join('')}
+                </div>
+            </div>`;
+
+            // AI Classification
+            const ai = report.ai_classification;
+            html += `<div class="report-section">
+                <h3><i class="fas fa-robot"></i> AI Classification</h3>
+                <div class="report-grid">
+                    <div class="report-field"><label>Classification:</label><span class="classification-badge ${ai.classification.toLowerCase()}">${ai.classification}</span></div>
+                    <div class="report-field"><label>Confidence:</label><span>${ai.confidence}%</span></div>
+                    <div class="report-field"><label>Model:</label><span>${ai.model_used}</span></div>
+                </div>
+                <div class="indicators-list">
+                    <h4>Detected Indicators:</h4>
+                    <ul>${ai.indicators.map(i => `<li>${i}</li>`).join('')}</ul>
+                </div>
+            </div>`;
+
+            // Authentication
+            const auth = report.authentication_analysis;
+            html += `<div class="report-section">
+                <h3><i class="fas fa-key"></i> Email Authentication</h3>
+                <div class="auth-grid">
+                    <div class="auth-item"><label>SPF:</label><span class="auth-badge ${auth.spf.status.toLowerCase()}">${auth.spf.status}</span><span class="auth-detail">${auth.spf.details}</span></div>
+                    <div class="auth-item"><label>DKIM:</label><span class="auth-badge ${auth.dkim.status.toLowerCase()}">${auth.dkim.status}</span><span class="auth-detail">${auth.dkim.details}</span></div>
+                    <div class="auth-item"><label>DMARC:</label><span class="auth-badge ${auth.dmarc.status.toLowerCase()}">${auth.dmarc.status}</span><span class="auth-detail">${auth.dmarc.details}</span></div>
+                </div>
+            </div>`;
+
+            // URL Intelligence
+            const urls = report.url_intelligence;
+            if (urls.urls && urls.urls.length > 0) {
+                html += `<div class="report-section">
+                    <h3><i class="fas fa-link"></i> URL Intelligence</h3>
+                    <p>Total URLs: ${urls.total_urls} | Suspicious: ${urls.suspicious_urls}</p>
+                    <table class="report-table">
+                        <thead><tr><th>URL</th><th>Domain</th><th>Risk</th><th>Level</th><th>Flags</th></tr></thead>
+                        <tbody>
+                            ${urls.urls.map(u => `<tr><td class="mono">${u.url}</td><td>${u.domain}</td><td>${u.risk_score}</td><td><span class="risk-badge ${u.risk_level.toLowerCase()}">${u.risk_level}</span></td><td>${(u.flags || []).join(', ')}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            }
+
+            // IP Intelligence
+            const ips = report.ip_intelligence;
+            if (ips.ips && ips.ips.length > 0) {
+                html += `<div class="report-section">
+                    <h3><i class="fas fa-network-wired"></i> IP Intelligence</h3>
+                    <p>Total IPs: ${ips.total_ips} | Public: ${ips.public_ips}</p>
+                    <table class="report-table">
+                        <thead><tr><th>IP</th><th>Country</th><th>City</th><th>ISP</th><th>ASN</th><th>Risk</th></tr></thead>
+                        <tbody>
+                            ${ips.ips.map(i => `<tr><td class="mono">${i.ip_address}</td><td>${i.country}</td><td>${i.city}</td><td>${i.isp}</td><td>${i.asn}</td><td><span class="risk-badge ${i.risk_level.toLowerCase()}">${i.risk_level}</span></td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            }
+
+            // Conclusion
+            html += `<div class="report-section">
+                <h3><i class="fas fa-gavel"></i> Conclusion</h3>
+                <p>${report.conclusion}</p>
+            </div>`;
+
+            // Recommendations
+            html += `<div class="report-section">
+                <h3><i class="fas fa-list-check"></i> Recommended Actions</h3>
+                <ul class="recommendations">
+                    ${report.recommended_actions.map(r => `<li><i class="fas fa-check-circle"></i> ${r}</li>`).join('')}
+                </ul>
+            </div>`;
+
+            return html;
+        }
+    </script>
+</body>
+</html>

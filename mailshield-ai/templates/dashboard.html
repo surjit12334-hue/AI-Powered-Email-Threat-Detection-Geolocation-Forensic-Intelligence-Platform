@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailShield AI - Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>MailShield AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/reports">Reports</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-container" id="dashboardContent" style="display:none;">
+        <div class="dashboard-header">
+            <h1>Investigation Dashboard</h1>
+            <div class="case-badge" id="caseBadge"></div>
+        </div>
+
+        <!-- Threat Score Section -->
+        <section class="threat-score-section">
+            <div class="threat-score-circle" id="threatScoreCircle">
+                <svg viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="90" class="score-bg"/>
+                    <circle cx="100" cy="100" r="90" class="score-fill" id="scoreFill"/>
+                </svg>
+                <div class="score-text">
+                    <span class="score-number" id="scoreNumber">0</span>
+                    <span class="score-max">/100</span>
+                    <span class="score-level" id="scoreLevel">ANALYZING</span>
+                </div>
+            </div>
+            <div class="threat-score-details" id="scoreBreakdown"></div>
+        </section>
+
+        <!-- Overview Cards -->
+        <section class="overview-cards">
+            <div class="card ai-card" id="aiCard">
+                <div class="card-icon"><i class="fas fa-robot"></i></div>
+                <div class="card-content">
+                    <h4>AI Classification</h4>
+                    <span class="card-value" id="aiClassification">--</span>
+                    <span class="card-sub" id="aiConfidence"></span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-link"></i></div>
+                <div class="card-content">
+                    <h4>URLs Found</h4>
+                    <span class="card-value" id="totalUrls">0</span>
+                    <span class="card-sub" id="suspiciousUrls">0 suspicious</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                <div class="card-content">
+                    <h4>IP Addresses</h4>
+                    <span class="card-value" id="totalIps">0</span>
+                    <span class="card-sub" id="publicIps">0 public</span>
+                </div>
+            </div>
+            <div class="card auth-card" id="authCard">
+                <div class="card-icon"><i class="fas fa-key"></i></div>
+                <div class="card-content">
+                    <h4>Authentication</h4>
+                    <div class="auth-status" id="authStatus"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Investigation Timeline -->
+        <section class="timeline-section">
+            <h2><i class="fas fa-timeline"></i> Investigation Timeline</h2>
+            <div class="timeline" id="timeline"></div>
+        </section>
+
+        <!-- Two Column Layout -->
+        <div class="dashboard-grid">
+            <!-- Geolocation Map -->
+            <section class="map-section">
+                <h2><i class="fas fa-map-location-dot"></i> IP Geolocation</h2>
+                <div class="map-notice">
+                    <i class="fas fa-info-circle"></i>
+                    IP geolocation represents network-level approximate information and does not identify a person's exact physical location.
+                </div>
+                <div id="map" class="geolocation-map"></div>
+                <div class="ip-legend" id="ipLegend"></div>
+            </section>
+
+            <!-- Email Analysis -->
+            <section class="email-analysis-section">
+                <h2><i class="fas fa-envelope-open-text"></i> Email Analysis</h2>
+                <div class="email-details" id="emailDetails"></div>
+            </section>
+        </div>
+
+        <!-- URL Analysis Table -->
+        <section class="table-section">
+            <h2><i class="fas fa-link"></i> URL Analysis</h2>
+            <div class="table-container">
+                <table class="data-table" id="urlTable">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Domain</th>
+                            <th>Risk Score</th>
+                            <th>Risk Level</th>
+                            <th>Flags</th>
+                        </tr>
+                    </thead>
+                    <tbody id="urlTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- IP Analysis Table -->
+        <section class="table-section">
+            <h2><i class="fas fa-network-wired"></i> IP Analysis</h2>
+            <div class="table-container">
+                <table class="data-table" id="ipTable">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Country</th>
+                            <th>City</th>
+                            <th>ISP</th>
+                            <th>ASN</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ipTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- AI Analysis Section -->
+        <section class="ai-analysis-section">
+            <h2><i class="fas fa-brain"></i> AI Analysis</h2>
+            <div class="ai-details" id="aiDetails"></div>
+        </section>
+
+        <!-- Generate Report -->
+        <section class="report-section">
+            <button class="btn btn-report" id="generateReport">
+                <i class="fas fa-file-shield"></i> Generate Forensic Report
+            </button>
+        </section>
+    </main>
+
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>Loading Analysis...</h3>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

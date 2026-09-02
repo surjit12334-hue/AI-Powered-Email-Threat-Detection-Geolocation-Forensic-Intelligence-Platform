@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailShield AI - Email Threat Detection</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="upload-page">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>MailShield AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="active">Dashboard</a>
+            <a href="/reports">Reports</a>
+        </div>
+    </nav>
+
+    <main class="upload-container">
+        <div class="hero-section">
+            <div class="hero-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h1>MailShield AI</h1>
+            <p class="subtitle">AI-Powered Email Forensic Intelligence</p>
+            <p class="description">Analyze suspicious emails, detect phishing attempts, investigate indicators, and generate actionable forensic intelligence.</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                </div>
+                <h3>Upload Suspicious Email</h3>
+                <p>Drag and drop a <code>.eml</code> file here, or click to browse</p>
+                <input type="file" id="fileInput" accept=".eml" hidden>
+                <button class="btn btn-primary" id="browseBtn">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </button>
+                <div class="file-info" id="fileInfo" style="display:none;">
+                    <i class="fas fa-file-code"></i>
+                    <span id="fileName"></span>
+                    <span id="fileSize"></span>
+                    <button class="btn-remove" id="removeFile"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <button class="btn btn-analyze" id="analyzeBtn" disabled>
+                <i class="fas fa-magnifying-glass-chart"></i>
+                <span>Analyze Email</span>
+            </button>
+        </div>
+
+        <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <h3>Analyzing Email...</h3>
+                <div class="analysis-steps" id="analysisSteps"></div>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-link"></i>
+                <h4>URL Analysis</h4>
+                <p>Extract and analyze all URLs for phishing indicators</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-globe"></i>
+                <h4>IP Intelligence</h4>
+                <p>Geolocation and reputation analysis of IP addresses</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-robot"></i>
+                <h4>AI Detection</h4>
+                <p>Machine learning powered phishing classification</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-file-shield"></i>
+                <h4>Forensic Reports</h4>
+                <p>Generate detailed investigation reports</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

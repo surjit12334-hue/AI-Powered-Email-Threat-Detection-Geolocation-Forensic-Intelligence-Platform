@@ -1,0 +1,37 @@
+From: security@paypa1-secure-login.xyz
+To: victim@example.com
+Reply-To: scammer@freemail.ml
+Subject: URGENT: Your PayPal account has been suspended!
+Date: Mon, 01 Jan 2024 10:30:00 -0500
+Message-ID: <fake12345@paypa1-secure-login.xyz>
+Return-Path: <bounces@freemail.ml>
+Received: from mail.freemail.ml (freemail.ml [197.210.55.12])
+    by mx.example.com with ESMTP id abc123
+    for <victim@example.com>; Mon, 01 Jan 2024 10:29:58 -0500
+Received: fromUnknown (unknown [41.168.23.45])
+    by mail.freemail.ml; Mon, 01 Jan 2024 10:29:55 -0500
+Authentication-Results: mx.example.com;
+    spf=fail (domain of paypa1-secure-login.xyz does not designate 197.210.55.12 as permitted sender);
+    dkim=fail header.d=freemail.ml;
+    dmarc=fail (p=REJECT)
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: PHPMailer 6.1.4
+X-Originating-IP: 41.168.23.45
+
+<html>
+<body style="font-family: Arial, sans-serif;">
+<h2 style="color: red;">⚠️ SECURITY ALERT ⚠️</h2>
+<p>Dear Customer,</p>
+<p>We have detected <strong>UNAUTHORIZED ACCESS</strong> to your PayPal account. Your account has been <strong>SUSPENDED</strong> until further notice.</p>
+<p>To restore your account, you must verify your identity within <strong>24 HOURS</strong> or your account will be <strong>PERMANENTLY DELETED</strong>.</p>
+<p>Click the link below to verify your account immediately:</p>
+<p><a href="http://paypal-secure-login.xyz/verify?id=12345&redirect=account" style="background-color: #0070ba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">VERIFY MY ACCOUNT NOW</a></p>
+<p>If you do not verify within 24 hours, all your funds will be lost.</p>
+<p>Thank you,<br>PayPal Security Team</p>
+<p style="font-size: 10px; color: gray;">This email was sent from an automated system. Do not reply.</p>
+<p>Visit: http://www.paypal-secure123-update.top/account/restore?token=abc123def456</p>
+<p>Also check: https://login.paypa1.com/secure/verify?u=victim</p>
+</body>
+</html>

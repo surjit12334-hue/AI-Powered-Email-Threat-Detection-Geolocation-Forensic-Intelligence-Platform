@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+uploads/*
+!uploads/.gitkeep
+reports/*
+!reports/.gitkeep
+backend/ai/model/*.joblib
+backend/ai/model/metadata.json
+.vscode/
+.idea/
+*.log
+.DS_Store
