@@ -1,6 +1,5 @@
 import os
 import requests
-import time
 from config import (VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY,
                     URLHAUS_API_KEY, ALIENVAULT_OTX_API_KEY)
 

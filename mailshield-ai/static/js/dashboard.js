@@ -82,7 +82,7 @@ function renderDashboard(data, caseId) {
 
     // Report Button
     document.getElementById('generateReport').addEventListener('click', () => {
-        window.open(`/reports?case_id=${caseId}`, '_blank');
+        window.open(`/report?case_id=${caseId}`, '_blank');
     });
 
     // Charts

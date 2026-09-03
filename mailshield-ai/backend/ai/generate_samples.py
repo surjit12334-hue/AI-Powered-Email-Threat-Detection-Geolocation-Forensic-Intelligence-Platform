@@ -1,6 +1,6 @@
 """Generate realistic sample .eml files for demo and testing."""
 import os
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 import random
 import uuid
 
@@ -150,7 +150,7 @@ LEGITIMATE_TEMPLATES = [
 
 def generate_sample_eml(template, output_dir):
     """Generate a sample .eml file from a template."""
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     date_str = now.strftime('%a, %d %b %Y %H:%M:%S +0000')
     message_id = f'<{uuid.uuid4().hex[:16]}@{template["from"].split("@")[1]}>'
 

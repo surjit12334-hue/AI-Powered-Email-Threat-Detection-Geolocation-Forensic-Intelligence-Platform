@@ -441,7 +441,7 @@ body {
 }
 .auth-badge-mini.pass { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
 .auth-badge-mini.fail { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
-.auth-badge-mini.unknown { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); }
+.auth-badge-mini.none, .auth-badge-mini.unknown { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); }
 
 /* Timeline */
 .timeline-section {

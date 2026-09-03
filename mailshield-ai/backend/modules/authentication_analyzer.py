@@ -30,7 +30,7 @@ def analyze_authentication(parsed_email):
         spf_match = re.search(r'spf[=:]\s*(\w+)', auth_lower)
         if spf_match:
             spf_status = spf_match.group(1).upper()
-            if spf_status in ['PASS', 'PASS']:
+            if spf_status == 'PASS':
                 result['spf']['status'] = 'PASS'
                 result['spf']['details'] = 'SPF check passed - sender IP is authorized.'
             elif spf_status in ['FAIL', 'SOFTFAIL', 'NEUTRAL', 'HARDFAIL']:
@@ -53,7 +53,7 @@ def analyze_authentication(parsed_email):
         dkim_match = re.search(r'dkim[=:]\s*(\w+)', auth_lower)
         if dkim_match:
             dkim_status = dkim_match.group(1).upper()
-            if dkim_status in ['PASS', 'PASS']:
+            if dkim_status == 'PASS':
                 result['dkim']['status'] = 'PASS'
                 result['dkim']['details'] = 'DKIM signature verified successfully.'
             elif dkim_status in ['FAIL', 'REJECT', 'NEUTRAL', 'TEMPERROR', 'PERMERROR']:
@@ -76,10 +76,10 @@ def analyze_authentication(parsed_email):
         dmarc_match = re.search(r'dmarc[=:]\s*(\w+)', auth_lower)
         if dmarc_match:
             dmarc_status = dmarc_match.group(1).upper()
-            if dmarc_status in ['PASS', 'PASS']:
+            if dmarc_status == 'PASS':
                 result['dmarc']['status'] = 'PASS'
                 result['dmarc']['details'] = 'DMARC policy check passed.'
-            elif dmarc_status in ['FAIL', 'REJECT', 'QUARANTINE', 'NONE']:
+            elif dmarc_status in ['FAIL', 'REJECT', 'QUARANTINE']:
                 result['dmarc']['status'] = 'FAIL'
                 result['dmarc']['details'] = f'DMARC policy check failed ({dmarc_status}).'
                 result['risk_score'] += 15

@@ -1,7 +1,7 @@
 import os
 import json
 import numpy as np
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 
 # Sample training dataset for phishing detection
@@ -96,7 +96,7 @@ def train_model():
 
     # Save training metadata
     metadata = {
-        'trained_at': datetime.now(UTC).isoformat(),
+        'trained_at': datetime.now(timezone.utc).isoformat(),
         'training_samples': len(TRAINING_DATA),
         'feature_names': feature_names,
         'rf_cv_score': float(np.mean(rf_scores)),

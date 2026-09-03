@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 
 def generate_forensic_report(case_id, parsed_email, email_info, header_analysis,
@@ -11,13 +11,13 @@ def generate_forensic_report(case_id, parsed_email, email_info, header_analysis,
 
     report = {
         'report_id': f'RPT-{case_id[:8].upper()}',
-        'generated_at': datetime.now(UTC).isoformat(),
+        'generated_at': datetime.now(timezone.utc).isoformat(),
         'case_id': case_id,
 
         'case_information': {
             'case_id': case_id,
             'report_id': f'RPT-{case_id[:8].upper()}',
-            'generated_at': datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC'),
             'analyzer_version': '1.0.0',
         },
 

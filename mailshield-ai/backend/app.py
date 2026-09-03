@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 import json
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (UPLOAD_FOLDER, REPORTS_FOLDER, MAX_CONTENT_LENGTH,
-                    ALLOWED_EXTENSIONS, VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY)
+                    ALLOWED_EXTENSIONS, VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY,
+                    SCORING_WEIGHTS)
 from database import (init_db, save_case, update_case, save_email_info,
                       save_indicator, save_url_analysis, save_ip_analysis,
                       save_auth_results, save_analysis_result,
@@ -29,7 +30,6 @@ from modules.forensic_report import generate_forensic_report
 from modules.threat_intel import threat_intel
 from modules.attachment_analyzer import analyze_attachments
 from modules.export_utils import export_report_json, export_report_csv, export_indicators_json
-from config import SCORING_WEIGHTS
 
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
@@ -59,6 +59,11 @@ def dashboard():
 @app.route('/reports')
 def reports_page():
     return render_template('reports.html')
+
+
+@app.route('/report')
+def report_page():
+    return render_template('report.html')
 
 
 @app.route('/api/cases', methods=['GET'])
@@ -232,7 +237,7 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
         'filename': filename,
         'file_hash': file_hash,
         'file_size': file_size,
-        'upload_time': datetime.now(UTC).isoformat(),
+        'upload_time': datetime.now(timezone.utc).isoformat(),
     }
     report = generate_forensic_report(
         case_id, parsed_email, email_info, header_analysis,
@@ -249,13 +254,13 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
 
     # Build timeline
     timeline = [
-        {'step': 1, 'action': 'Email uploaded', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 2, 'action': 'Headers parsed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 4, 'action': 'IP addresses identified', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 5, 'action': 'Email authentication checked', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 6, 'action': 'AI classification completed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
-        {'step': 7, 'action': 'Threat score generated', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 1, 'action': 'Email uploaded', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 2, 'action': 'Headers parsed', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 4, 'action': 'IP addresses identified', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 5, 'action': 'Email authentication checked', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 6, 'action': 'AI classification completed', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
+        {'step': 7, 'action': 'Threat score generated', 'status': 'completed', 'timestamp': datetime.now(timezone.utc).isoformat()},
     ]
 
     return {
@@ -290,14 +295,97 @@ def get_case_details(case_id):
     ip_analyses = get_ip_analyses(case_id)
     auth_results = get_auth_results(case_id)
 
-    return jsonify({
-        'case': case,
-        'email_info': email_info,
-        'indicators': indicators,
-        'url_analyses': url_analyses,
-        'ip_analyses': ip_analyses,
-        'auth_results': auth_results,
-    })
+    # Load the full report if available (contains all analysis data)
+    report_path = os.path.join(REPORTS_FOLDER, f'{case_id}_report.json')
+    full_report = None
+    if os.path.exists(report_path):
+        try:
+            with open(report_path, 'r') as f:
+                full_report = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    # Build response matching dashboard.js expected structure
+    if full_report:
+        return jsonify({
+            'case_id': case_id,
+            'filename': case.get('filename', ''),
+            'file_hash': case.get('file_hash', ''),
+            'file_size': case.get('file_size', 0),
+            'threat_score': full_report.get('threat_score', {}),
+            'phishing_detection': full_report.get('ai_classification', {}),
+            'url_analysis': full_report.get('url_intelligence', {}),
+            'ip_analysis': full_report.get('ip_intelligence', {}),
+            'domain_analysis': full_report.get('domain_intelligence', {}),
+            'authentication': full_report.get('authentication_analysis', {}),
+            'email_metadata': full_report.get('email_metadata', {}),
+            'header_analysis': full_report.get('header_analysis', {}),
+            'attachment_analysis': full_report.get('attachment_intelligence', {}),
+            'timeline': [
+                {'step': 1, 'action': 'Email uploaded', 'status': 'completed'},
+                {'step': 2, 'action': 'Headers parsed', 'status': 'completed'},
+                {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed'},
+                {'step': 4, 'action': 'IP addresses identified', 'status': 'completed'},
+                {'step': 5, 'action': 'Email authentication checked', 'status': 'completed'},
+                {'step': 6, 'action': 'AI classification completed', 'status': 'completed'},
+                {'step': 7, 'action': 'Threat score generated', 'status': 'completed'},
+            ],
+            'indicators': indicators,
+            'report': full_report,
+        })
+    else:
+        # Fallback: reconstruct from database tables
+        return jsonify({
+            'case_id': case_id,
+            'filename': case.get('filename', ''),
+            'threat_score': {
+                'score': case.get('threat_score', 0),
+                'threat_level': case.get('threat_level', 'UNKNOWN'),
+                'breakdown': [],
+            },
+            'phishing_detection': {
+                'classification': case.get('ai_classification', 'UNKNOWN'),
+                'confidence': case.get('ai_confidence', 0),
+                'indicators': [i.get('indicator_value', '') for i in indicators],
+                'model_used': 'unknown',
+            },
+            'url_analysis': {
+                'urls': url_analyses,
+                'total_urls': len(url_analyses),
+                'suspicious_urls': sum(1 for u in url_analyses if u.get('risk_level') in ['HIGH', 'CRITICAL']),
+            },
+            'ip_analysis': {
+                'ips': ip_analyses,
+                'total_ips': len(ip_analyses),
+                'public_ips': sum(1 for i in ip_analyses if 'PRIVATE' not in (i.get('details', '') or '')),
+            },
+            'authentication': {
+                'spf': {'status': auth_results.get('spf_result', 'UNKNOWN') if auth_results else 'UNKNOWN', 'details': ''},
+                'dkim': {'status': auth_results.get('dkim_result', 'UNKNOWN') if auth_results else 'UNKNOWN', 'details': ''},
+                'dmarc': {'status': auth_results.get('dmarc_result', 'UNKNOWN') if auth_results else 'UNKNOWN', 'details': ''},
+            },
+            'email_metadata': {
+                'from': email_info.get('sender', 'N/A') if email_info else 'N/A',
+                'to': email_info.get('recipient', 'N/A') if email_info else 'N/A',
+                'cc': email_info.get('cc', 'N/A') if email_info else 'N/A',
+                'subject': email_info.get('subject', 'N/A') if email_info else 'N/A',
+                'date': email_info.get('date', 'N/A') if email_info else 'N/A',
+                'reply_to': email_info.get('reply_to', 'N/A') if email_info else 'N/A',
+                'return_path': email_info.get('return_path', 'N/A') if email_info else 'N/A',
+                'message_id': email_info.get('message_id', 'N/A') if email_info else 'N/A',
+                'x_mailer': 'N/A',
+            },
+            'timeline': [
+                {'step': 1, 'action': 'Email uploaded', 'status': 'completed'},
+                {'step': 2, 'action': 'Headers parsed', 'status': 'completed'},
+                {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed'},
+                {'step': 4, 'action': 'IP addresses identified', 'status': 'completed'},
+                {'step': 5, 'action': 'Email authentication checked', 'status': 'completed'},
+                {'step': 6, 'action': 'AI classification completed', 'status': 'completed'},
+                {'step': 7, 'action': 'Threat score generated', 'status': 'completed'},
+            ],
+            'indicators': indicators,
+        })
 
 
 @app.route('/api/report/<case_id>', methods=['GET'])
@@ -314,7 +402,10 @@ def get_report(case_id):
 
 @app.route('/reports/<filename>')
 def serve_report(filename):
-    return send_from_directory(REPORTS_FOLDER, filename)
+    safe_name = secure_filename(filename)
+    if not safe_name:
+        return jsonify({'error': 'Invalid filename'}), 400
+    return send_from_directory(REPORTS_FOLDER, safe_name)
 
 
 @app.route('/settings')
