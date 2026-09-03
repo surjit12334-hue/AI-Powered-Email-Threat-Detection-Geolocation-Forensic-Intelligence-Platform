@@ -1,5 +1,10 @@
 import re
+import sys
+import os
 from config import PHISHING_KEYWORDS
+
+# Add ai directory to path for ML imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ai'))
 
 
 def extract_features(parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis):
@@ -164,11 +169,84 @@ def classify_email(features):
     }
 
 
-def detect_phishing(parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis):
-    """Main phishing detection function."""
-    features = extract_features(parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis)
-    classification = classify_email(features)
+def classify_with_ml(features):
+    """Attempt to classify using the trained ML model ensemble."""
+    try:
+        from predict import predict_with_ml
+        # Map extracted features to ML model feature names
+        ml_features = {
+            'urls': features.get('url_count', 0),
+            'suspicious_urls': features.get('suspicious_url_count', 0),
+            'spf_fail': features.get('spf_fail', 0),
+            'dkim_fail': features.get('dkim_fail', 0),
+            'dmarc_fail': features.get('dmarc_fail', 0),
+            'reply_mismatch': features.get('has_reply_to_mismatch', 0),
+            'urgency': features.get('urgency_score', 0),
+            'phishing_keywords': features.get('phishing_keyword_count', 0),
+            'caps_ratio': features.get('caps_ratio', 0),
+        }
+        return predict_with_ml(ml_features)
+    except Exception:
+        return None
 
+
+def detect_phishing(parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis):
+    """Main phishing detection function. Uses ML ensemble when available, falls back to heuristics."""
+    features = extract_features(parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis)
+
+    # Try ML classification first
+    ml_result = classify_with_ml(features)
+
+    if ml_result and ml_result.get('classification'):
+        # Merge ML result with heuristic indicators
+        heuristic = classify_email(features)
+        # Combine indicators from both approaches
+        combined_indicators = list(heuristic['indicators'])
+        # Add top ML feature importances as indicators if available
+        importances = ml_result.get('feature_importances', {})
+        if importances:
+            top_features = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:3]
+            for fname, imp in top_features:
+                if imp > 0.1:
+                    friendly_names = {
+                        'urls': 'URL count',
+                        'suspicious_urls': 'Suspicious URLs',
+                        'spf_fail': 'SPF failure',
+                        'dkim_fail': 'DKIM failure',
+                        'dmarc_fail': 'DMARC failure',
+                        'reply_mismatch': 'Reply-To mismatch',
+                        'urgency': 'Urgency language',
+                        'phishing_keywords': 'Phishing keywords',
+                        'caps_ratio': 'Excessive caps',
+                    }
+                    label = friendly_names.get(fname, fname)
+                    combined_indicators.append(f"ML feature importance: {label} ({imp:.1%})")
+
+        # Use ML confidence but ensure minimum from heuristics
+        final_confidence = max(ml_result['confidence'], heuristic['confidence'])
+        final_classification = ml_result['classification']
+        # If heuristic is strongly malicious but ML says benign, trust heuristic more
+        if heuristic['classification'] in ['MALICIOUS', 'PHISHING'] and ml_result['classification'] == 'BENIGN':
+            if heuristic['confidence'] >= 60:
+                final_classification = heuristic['classification']
+                final_confidence = heuristic['confidence']
+
+        return {
+            'features': features,
+            'classification': final_classification,
+            'confidence': round(final_confidence, 1),
+            'indicators': combined_indicators,
+            'model_used': ml_result.get('model_used', 'ensemble_rf_lr'),
+            'ml_details': {
+                'rf_prediction': ml_result.get('rf_prediction'),
+                'lr_prediction': ml_result.get('lr_prediction'),
+                'rf_confidence': ml_result.get('rf_confidence'),
+                'lr_confidence': ml_result.get('lr_confidence'),
+            },
+        }
+
+    # Fallback to rule-based heuristic
+    classification = classify_email(features)
     return {
         'features': features,
         'classification': classification['classification'],

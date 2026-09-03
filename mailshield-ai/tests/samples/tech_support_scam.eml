@@ -1,0 +1,30 @@
+From: support@windows-defender-alert.com
+To: victim@example.com
+Reply-To: tech@windows-support.pw
+Subject: CRITICAL: Your computer is infected with 5 viruses!
+Date: Wed, 02 Sep 2026 18:07:32 +0000
+Message-ID: <c75096d48949432f@windows-defender-alert.com>
+Return-Path: <bounce@windows-defender-alert.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer:  mass mailer
+X-Originating-IP: [197.210.55.12]
+Authentication-Results: mx.example.com;
+    spf=fail domain of windows-defender-alert.com does not designate 197.210.55.12 as permitted sender;
+    dkim=none header.d=windows-defender-alert.com;
+    dmarc=fail
+Received: from mail.windows-defender-alert.com (mail.windows-defender-alert.com [197.210.55.12])
+	by mx.example.com with ESMTP id 747739c7190c
+	for <victim@example.com>; Wed, 02 Sep 2026 18:07:32 +0000
+
+<html><body style="background:#000;color:#fff;">
+<div style="padding:20px;">
+<h1 style="color:red;">WARNING!</h1>
+<p>Your computer has been infected with <strong>5 different viruses</strong>!</p>
+<p>Your personal data, banking information, and photos are at risk.</p>
+<p>Call Microsoft Support immediately: <strong>1-800-FAKE-NUM</strong></p>
+<p>Or click here to remove viruses: <a href="http://windows-defender-remove.gq/scan" style="color:#0ff;">REMOVE VIRUSES NOW</a></p>
+<p>Act NOW before your data is stolen!</p>
+</div>
+</body></html>

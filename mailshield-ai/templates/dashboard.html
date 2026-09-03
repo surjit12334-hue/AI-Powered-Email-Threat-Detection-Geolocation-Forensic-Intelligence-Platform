@@ -20,6 +20,7 @@
         <div class="nav-links">
             <a href="/" class="active">Dashboard</a>
             <a href="/reports">Reports</a>
+            <a href="/settings">Settings</a>
         </div>
     </nav>
 
@@ -150,6 +151,18 @@
             <h2><i class="fas fa-brain"></i> AI Analysis</h2>
             <div class="ai-details" id="aiDetails"></div>
         </section>
+
+        <!-- Charts Section -->
+        <div class="dashboard-grid">
+            <section class="table-section">
+                <h2><i class="fas fa-chart-pie"></i> Risk Distribution</h2>
+                <canvas id="riskChart" height="250"></canvas>
+            </section>
+            <section class="table-section">
+                <h2><i class="fas fa-chart-bar"></i> Threat Factors</h2>
+                <canvas id="factorsChart" height="250"></canvas>
+            </section>
+        </div>
 
         <!-- Generate Report -->
         <section class="report-section">

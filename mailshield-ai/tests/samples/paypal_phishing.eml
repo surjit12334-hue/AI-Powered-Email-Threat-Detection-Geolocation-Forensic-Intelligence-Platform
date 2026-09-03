@@ -1,0 +1,29 @@
+From: security@paypa1-secure-login.xyz
+To: victim@example.com
+Reply-To: scammer@freemail.ml
+Subject: URGENT: Your PayPal account has been suspended!
+Date: Wed, 02 Sep 2026 18:07:32 +0000
+Message-ID: <d3030c09cc0f47ed@paypa1-secure-login.xyz>
+Return-Path: <bounces@freemail.ml>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: PHPMailer 6.1.4
+X-Originating-IP: [41.168.23.45]
+Authentication-Results: mx.example.com;
+    spf=fail domain of paypa1-secure-login.xyz does not designate 197.210.55.12 as permitted sender;
+    dkim=fail header.d=paypa1-secure-login.xyz;
+    dmarc=fail
+Received: from mail.freemail.ml (mail.freemail.ml [197.210.55.12])
+	by mx.example.com with ESMTP id b724ef18fda1
+	for <victim@example.com>; Wed, 02 Sep 2026 18:07:32 +0000
+
+<html><body style="font-family:Arial,sans-serif;">
+<h2 style="color:red;">SECURITY ALERT</h2>
+<p>Dear Customer,</p>
+<p>We have detected UNAUTHORIZED ACCESS to your PayPal account. Your account has been SUSPENDED.</p>
+<p>Verify your identity within 24 HOURS or your account will be PERMANENTLY DELETED.</p>
+<p><a href="http://paypal-secure-login.xyz/verify?id=12345">VERIFY MY ACCOUNT NOW</a></p>
+<p>Visit: http://www.paypal-secure123-update.top/account/restore?token=abc123</p>
+<p>Also check: https://login.paypa1.com/secure/verify?u=victim</p>
+</body></html>

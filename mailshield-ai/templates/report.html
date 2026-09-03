@@ -42,6 +42,15 @@
             <button class="btn btn-print" onclick="window.print()">
                 <i class="fas fa-print"></i> Print Report
             </button>
+            <button class="btn btn-print" id="exportJson">
+                <i class="fas fa-file-code"></i> Export JSON
+            </button>
+            <button class="btn btn-print" id="exportCsv">
+                <i class="fas fa-file-csv"></i> Export CSV
+            </button>
+            <button class="btn btn-print" id="exportIoc">
+                <i class="fas fa-shield-halved"></i> Export IOCs
+            </button>
             <a href="/" class="btn btn-primary">
                 <i class="fas fa-upload"></i> New Analysis
             </a>
@@ -71,6 +80,11 @@
 
                     const sections = document.getElementById('reportSections');
                     sections.innerHTML = generateReportHTML(report);
+
+                    // Export handlers
+                    document.getElementById('exportJson').onclick = () => window.location.href = `/api/export/${caseId}/json`;
+                    document.getElementById('exportCsv').onclick = () => window.location.href = `/api/export/${caseId}/csv`;
+                    document.getElementById('exportIoc').onclick = () => window.location.href = `/api/export/${caseId}/ioc`;
                 })
                 .catch(err => {
                     document.getElementById('reportSections').innerHTML =

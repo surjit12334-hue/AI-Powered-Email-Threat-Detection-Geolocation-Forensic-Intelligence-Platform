@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailShield AI - Investigation Reports</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-page">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>MailShield AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/reports" class="active">Reports</a>
+            <a href="/settings">Settings</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-folder-open"></i> Investigation Reports</h1>
+            <a href="/" class="btn btn-primary"><i class="fas fa-plus"></i> New Analysis</a>
+        </div>
+
+        <div class="reports-stats" id="reportsStats"></div>
+
+        <section class="table-section">
+            <div class="table-container">
+                <table class="data-table" id="casesTable">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Filename</th>
+                            <th>File Hash</th>
+                            <th>Threat Score</th>
+                            <th>Level</th>
+                            <th>Classification</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="casesTableBody"></tbody>
+                </table>
+                <div id="emptyState" style="display:none;text-align:center;padding:3rem;color:var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size:3rem;margin-bottom:1rem;display:block;"></i>
+                    <p>No investigation reports yet.</p>
+                    <a href="/" class="btn btn-primary" style="margin-top:1rem;">Upload Your First Email</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadCases);
+
+        async function loadCases() {
+            try {
+                const resp = await fetch('/api/cases');
+                const data = await resp.json();
+                const cases = data.cases || [];
+
+                if (cases.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('casesTable').style.display = 'none';
+                    return;
+                }
+
+                // Stats
+                const total = cases.length;
+                const critical = cases.filter(c => c.threat_level === 'CRITICAL').length;
+                const high = cases.filter(c => c.threat_level === 'HIGH').length;
+                const phishing = cases.filter(c => c.ai_classification === 'PHISHING' || c.ai_classification === 'MALICIOUS').length;
+
+                document.getElementById('reportsStats').innerHTML = `
+                    <div class="overview-cards">
+                        <div class="card">
+                            <div class="card-icon"><i class="fas fa-folder"></i></div>
+                            <div class="card-content">
+                                <h4>Total Cases</h4>
+                                <span class="card-value">${total}</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon" style="color:var(--threat-critical);"><i class="fas fa-skull-crossbones"></i></div>
+                            <div class="card-content">
+                                <h4>Critical Threats</h4>
+                                <span class="card-value" style="color:var(--threat-critical);">${critical}</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon" style="color:var(--threat-high);"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="card-content">
+                                <h4>High Threats</h4>
+                                <span class="card-value" style="color:var(--threat-high);">${high}</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon" style="color:var(--accent-pink);"><i class="fas fa-phishing"></i></div>
+                            <div class="card-content">
+                                <h4>Phishing Detected</h4>
+                                <span class="card-value" style="color:var(--accent-pink);">${phishing}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Table
+                const tbody = document.getElementById('casesTableBody');
+                tbody.innerHTML = cases.map(c => `
+                    <tr>
+                        <td class="mono">${c.case_id.substring(0, 8)}...</td>
+                        <td>${escapeHtml(c.filename)}</td>
+                        <td class="mono" style="font-size:0.75rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;">${c.file_hash.substring(0, 16)}...</td>
+                        <td><strong>${c.threat_score}</strong>/100</td>
+                        <td><span class="risk-badge ${c.threat_level.toLowerCase()}">${c.threat_level}</span></td>
+                        <td><span class="classification-badge ${c.ai_classification.toLowerCase()}">${c.ai_classification}</span></td>
+                        <td>${new Date(c.upload_time).toLocaleDateString()}</td>
+                        <td>
+                            <a href="/dashboard?case_id=${c.case_id}" class="btn btn-primary" style="padding:0.4rem 0.8rem;font-size:0.8rem;">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                console.error('Failed to load cases:', err);
+            }
+        }
+
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    </script>
+</body>
+</html>

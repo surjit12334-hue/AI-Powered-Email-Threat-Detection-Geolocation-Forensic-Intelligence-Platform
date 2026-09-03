@@ -12,18 +12,19 @@ class SafeHTMLTextExtractor(HTMLParser):
     def __init__(self):
         super().__init__()
         self.result = []
-        self.skip_tags = {'script', 'style', 'noscript'}
+        self._skip_tags = {'script', 'style', 'noscript'}
+        self._active_skip = set()
 
     def handle_starttag(self, tag, attrs):
-        if tag.lower() in self.skip_tags:
-            self.skip_tags.add(tag.lower())
+        if tag.lower() in self._skip_tags:
+            self._active_skip.add(tag.lower())
 
     def handle_endtag(self, tag):
-        if tag.lower() in self.skip_tags:
-            self.skip_tags.discard(tag.lower())
+        if tag.lower() in self._active_skip:
+            self._active_skip.discard(tag.lower())
 
     def handle_data(self, data):
-        if not self.skip_tags:
+        if not self._active_skip:
             self.result.append(data)
 
     def get_text(self):
@@ -49,7 +50,7 @@ def parse_eml_file(file_path):
     }
 
     with open(file_path, 'rb') as f:
-        msg = policy.default.parser().parse(f)
+        msg = BytesParser(policy=policy.default).parse(f)
 
     # Basic email fields
     result['basic_info'] = {

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailShield AI - Settings</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="dashboard-page">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>MailShield AI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/reports">Reports</a>
+            <a href="/settings" class="active">Settings</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-gear"></i> Settings</h1>
+        </div>
+
+        <!-- API Configuration Status -->
+        <section class="table-section">
+            <h2><i class="fas fa-plug"></i> Threat Intelligence APIs</h2>
+            <p style="color:var(--text-muted);margin-bottom:1.5rem;">
+                API keys are configured via environment variables. Add them to your <code>.env</code> file.
+                All APIs are optional — the application works without them.
+            </p>
+            <div class="settings-grid" id="apiStatus"></div>
+        </section>
+
+        <!-- Scoring Weights -->
+        <section class="table-section">
+            <h2><i class="fas fa-scale-balanced"></i> Threat Scoring Weights</h2>
+            <div class="scoring-weights" id="scoringWeights"></div>
+        </section>
+
+        <!-- System Info -->
+        <section class="table-section">
+            <h2><i class="fas fa-circle-info"></i> System Information</h2>
+            <div class="system-info" id="systemInfo"></div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="table-section">
+            <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+            <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+                <a href="/" class="btn btn-primary"><i class="fas fa-upload"></i> Upload Email</a>
+                <a href="/reports" class="btn btn-print"><i class="fas fa-folder-open"></i> View Reports</a>
+                <button class="btn btn-print" onclick="trainModel()"><i class="fas fa-brain"></i> Retrain ML Model</button>
+            </div>
+            <div id="trainResult" style="margin-top:1rem;"></div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load API status
+            try {
+                const resp = await fetch('/api/settings');
+                const data = await resp.json();
+
+                const apis = data.apis || {};
+                const apiCards = [
+                    { key: 'virustotal', name: 'VirusTotal', icon: 'fa-virus', desc: 'URL, IP, and domain reputation scanning' },
+                    { key: 'abuseipdb', name: 'AbuseIPDB', icon: 'fa-server', desc: 'IP address abuse confidence scoring' },
+                    { key: 'urlhaus', name: 'URLhaus', icon: 'fa-link-slash', desc: 'Malicious URL database by abuse.ch' },
+                    { key: 'otx', name: 'AlienVault OTX', icon: 'fa-satellite-dish', desc: 'Open threat intelligence community' },
+                ];
+
+                document.getElementById('apiStatus').innerHTML = apiCards.map(api => `
+                    <div class="card" style="border-color:${apis[api.key] ? 'var(--accent-green)' : 'var(--border)'};">
+                        <div class="card-icon" style="color:${apis[api.key] ? 'var(--accent-green)' : 'var(--text-muted)'};">
+                            <i class="fas ${api.icon}"></i>
+                        </div>
+                        <div class="card-content">
+                            <h4>${api.name}</h4>
+                            <span class="card-value" style="font-size:1rem;color:${apis[api.key] ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                                ${apis[api.key] ? 'CONFIGURED' : 'NOT CONFIGURED'}
+                            </span>
+                            <span class="card-sub">${api.desc}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Scoring weights
+                const weights = data.scoring_weights || {};
+                document.getElementById('scoringWeights').innerHTML = `
+                    <table class="data-table">
+                        <thead><tr><th>Factor</th><th>Points</th></tr></thead>
+                        <tbody>
+                            ${Object.entries(weights).map(([k, v]) => `
+                                <tr><td>${k.replace(/_/g, ' ').toUpperCase()}</td><td><strong>+${v}</strong></td></tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+
+                // System info
+                document.getElementById('systemInfo').innerHTML = `
+                    <table class="data-table">
+                        <tbody>
+                            <tr><td>Version</td><td>1.0.0</td></tr>
+                            <tr><td>Max Upload Size</td><td>16 MB</td></tr>
+                            <tr><td>Allowed Extensions</td><td>.eml</td></tr>
+                            <tr><td>Database</td><td>SQLite</td></tr>
+                            <tr><td>ML Model</td><td>Random Forest + Logistic Regression Ensemble</td></tr>
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            }
+        });
+
+        async function trainModel() {
+            const result = document.getElementById('trainResult');
+            result.innerHTML = '<p style="color:var(--accent-cyan);"><i class="fas fa-spinner fa-spin"></i> Training model...</p>';
+            try {
+                const resp = await fetch('/api/train', { method: 'POST' });
+                const data = await resp.json();
+                if (data.error) {
+                    result.innerHTML = `<p style="color:var(--accent-red);">Error: ${data.error}</p>`;
+                } else {
+                    result.innerHTML = `<p style="color:var(--accent-green);"><i class="fas fa-check-circle"></i> Model retrained! RF Accuracy: ${(data.rf_accuracy * 100).toFixed(1)}%, LR Accuracy: ${(data.lr_accuracy * 100).toFixed(1)}%</p>`;
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color:var(--accent-red);">Training failed: ${err.message}</p>`;
+            }
+        }
+    </script>
+
+    <style>
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .scoring-weights .data-table td:first-child {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .system-info .data-table td:first-child {
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 200px;
+        }
+    </style>
+</body>
+</html>

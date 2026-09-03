@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from datetime import datetime
+from datetime import datetime, UTC
 from config import DATABASE_PATH
 
 
@@ -125,7 +125,7 @@ def save_case(case_id, filename, file_hash, file_size):
     conn = get_db()
     conn.execute(
         'INSERT INTO cases (case_id, filename, file_hash, file_size, upload_time) VALUES (?, ?, ?, ?, ?)',
-        (case_id, filename, file_hash, file_size, datetime.utcnow().isoformat())
+        (case_id, filename, file_hash, file_size, datetime.now(UTC).isoformat())
     )
     conn.commit()
     conn.close()
@@ -207,7 +207,7 @@ def save_analysis_result(case_id, analysis_type, result_data):
     conn = get_db()
     conn.execute(
         'INSERT INTO analysis_results (case_id, analysis_type, result_data, created_at) VALUES (?, ?, ?, ?)',
-        (case_id, analysis_type, json.dumps(result_data), datetime.utcnow().isoformat())
+        (case_id, analysis_type, json.dumps(result_data), datetime.now(UTC).isoformat())
     )
     conn.commit()
     conn.close()

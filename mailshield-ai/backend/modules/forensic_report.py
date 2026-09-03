@@ -1,23 +1,23 @@
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 def generate_forensic_report(case_id, parsed_email, email_info, header_analysis,
                              auth_analysis, url_analysis, ip_analysis,
                              domain_analysis, phishing_result, threat_score,
-                             indicators):
+                             indicators, attachment_analysis=None):
     """Generate a comprehensive forensic investigation report."""
     basic = parsed_email.get('basic_info', {})
     body = parsed_email.get('body', {})
 
     report = {
         'report_id': f'RPT-{case_id[:8].upper()}',
-        'generated_at': datetime.utcnow().isoformat(),
+        'generated_at': datetime.now(UTC).isoformat(),
         'case_id': case_id,
 
         'case_information': {
             'case_id': case_id,
             'report_id': f'RPT-{case_id[:8].upper()}',
-            'generated_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'generated_at': datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC'),
             'analyzer_version': '1.0.0',
         },
 
@@ -75,6 +75,8 @@ def generate_forensic_report(case_id, parsed_email, email_info, header_analysis,
             'public_ips': ip_analysis.get('public_ips', 0),
             'ips': ip_analysis.get('ips', []),
         },
+
+        'attachment_intelligence': attachment_analysis or {},
 
         'ai_classification': {
             'classification': phishing_result.get('classification', 'UNKNOWN'),

@@ -1,0 +1,29 @@
+From: newsletter@techcrunch.com
+To: victim@example.com
+Reply-To: newsletter@techcrunch.com
+Subject: TechCrunch Daily - Top Stories
+Date: Wed, 02 Sep 2026 18:07:32 +0000
+Message-ID: <edbd7bce0b2d4046@techcrunch.com>
+Return-Path: <newsletter@techcrunch.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Mailchimp
+X-Originating-IP: []
+Authentication-Results: mx.example.com;
+    spf=pass domain of techcrunch.com does not designate 205.201.128.0 as permitted sender;
+    dkim=pass header.d=techcrunch.com;
+    dmarc=pass
+Received: from mailchimp.com (mailchimp.com [205.201.128.0])
+	by mx.example.com with ESMTP id 5a49d8b6f04d
+	for <victim@example.com>; Wed, 02 Sep 2026 18:07:32 +0000
+
+<html><body>
+<h2>TechCrunch Daily</h2>
+<p>Here are today's top stories in tech and startups.</p>
+<ul>
+<li>AI startup raises $50M Series B</li>
+<li>New programming language gains traction</li>
+<li>Cloud computing trends for 2025</li>
+</ul>
+</body></html>

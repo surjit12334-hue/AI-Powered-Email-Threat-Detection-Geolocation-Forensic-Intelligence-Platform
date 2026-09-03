@@ -1,6 +1,7 @@
 import re
 import socket
 import struct
+import requests
 
 
 # Reserved IP ranges for private/internal addresses
@@ -48,6 +49,33 @@ def extract_ips_from_text(text):
     return [ip for ip in ips if is_valid_ip(ip)]
 
 
+def geolocate_ip(ip_address):
+    """Fetch geolocation data for a public IP using ip-api.com (free tier)."""
+    try:
+        resp = requests.get(
+            f'http://ip-api.com/json/{ip_address}',
+            params={'fields': 'status,country,countryCode,regionName,city,lat,lon,isp,org,as'},
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') == 'success':
+                return {
+                    'country': data.get('country', 'Unknown'),
+                    'country_code': data.get('countryCode', ''),
+                    'region': data.get('regionName', 'Unknown'),
+                    'city': data.get('city', 'Unknown'),
+                    'latitude': data.get('lat'),
+                    'longitude': data.get('lon'),
+                    'isp': data.get('isp', 'Unknown'),
+                    'org': data.get('org', 'Unknown'),
+                    'asn': data.get('as', 'Unknown'),
+                }
+    except (requests.RequestException, ValueError):
+        pass
+    return None
+
+
 def analyze_ip(ip_address, geo_data=None):
     """Analyze a single IP address for risk indicators."""
     result = {
@@ -78,7 +106,7 @@ def analyze_ip(ip_address, geo_data=None):
         result['risk_level'] = 'LOW'
         return result
 
-    # Apply geo data if available
+    # Apply geo data if available, otherwise fetch it
     if geo_data:
         result['country'] = geo_data.get('country', 'Unknown')
         result['city'] = geo_data.get('city', 'Unknown')
@@ -86,6 +114,16 @@ def analyze_ip(ip_address, geo_data=None):
         result['asn'] = geo_data.get('asn', 'Unknown')
         result['latitude'] = geo_data.get('latitude')
         result['longitude'] = geo_data.get('longitude')
+    else:
+        fetched = geolocate_ip(ip_address)
+        if fetched:
+            result['country'] = fetched.get('country', 'Unknown')
+            result['city'] = fetched.get('city', 'Unknown')
+            result['isp'] = fetched.get('isp', 'Unknown')
+            result['asn'] = fetched.get('asn', 'Unknown')
+            result['latitude'] = fetched.get('latitude')
+            result['longitude'] = fetched.get('longitude')
+            result['flags'].append('GEOLOCATED')
 
     # Check known suspicious patterns
     for pattern in SUSPICIOUS_IP_PATTERNS:
@@ -122,6 +160,11 @@ def analyze_ips(parsed_email):
     results = []
     for ip in sorted(all_ips):
         analysis = analyze_ip(ip)
+        # Perform reverse DNS lookup for public IPs
+        if analysis['ip_type'] == 'Public' and analysis['is_valid']:
+            rdns = reverse_dns_lookup(ip)
+            if rdns:
+                analysis['flags'].append(f'RDNS:{rdns}')
         results.append(analysis)
 
     return {
@@ -133,7 +176,7 @@ def analyze_ips(parsed_email):
 
 
 def reverse_dns_lookup(ip_address):
-    """Perform reverse DNS lookup on an IP (non-blocking placeholder)."""
+    """Perform reverse DNS lookup on an IP."""
     try:
         hostname = socket.gethostbyaddr(ip_address)
         return hostname[0]

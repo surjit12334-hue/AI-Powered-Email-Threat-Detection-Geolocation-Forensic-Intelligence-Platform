@@ -1,0 +1,28 @@
+From: notifications@github.com
+To: victim@example.com
+Reply-To: notifications@github.com
+Subject: [GitHub] A new dependency vulnerability has been detected
+Date: Wed, 02 Sep 2026 18:07:32 +0000
+Message-ID: <d5cfcb06fafe4b46@github.com>
+Return-Path: <notifications@github.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: 
+X-Originating-IP: []
+Authentication-Results: mx.example.com;
+    spf=pass domain of github.com does not designate 140.82.121.3 as permitted sender;
+    dkim=pass header.d=github.com;
+    dmarc=pass
+Received: from github.com (github.com [140.82.121.3])
+	by mx.example.com with ESMTP id 932b65218cac
+	for <victim@example.com>; Wed, 02 Sep 2026 18:07:32 +0000
+
+<html><body style="font-family:-apple-system,sans-serif;">
+<h3>Dependency Alert</h3>
+<p>A new vulnerability has been detected in one of your repositories.</p>
+<p><strong>Repository:</strong> my-project<br>
+<strong>Severity:</strong> Moderate<br>
+<strong>Package:</strong> lodash@4.17.20</p>
+<p>View details on GitHub.</p>
+</body></html>

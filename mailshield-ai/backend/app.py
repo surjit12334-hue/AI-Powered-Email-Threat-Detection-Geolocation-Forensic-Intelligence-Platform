@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -26,6 +26,10 @@ from modules.authentication_analyzer import analyze_authentication
 from modules.phishing_detector import detect_phishing
 from modules.threat_scoring import calculate_threat_score
 from modules.forensic_report import generate_forensic_report
+from modules.threat_intel import threat_intel
+from modules.attachment_analyzer import analyze_attachments
+from modules.export_utils import export_report_json, export_report_csv, export_indicators_json
+from config import SCORING_WEIGHTS
 
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
@@ -54,7 +58,7 @@ def dashboard():
 
 @app.route('/reports')
 def reports_page():
-    return render_template('report.html')
+    return render_template('reports.html')
 
 
 @app.route('/api/cases', methods=['GET'])
@@ -119,6 +123,16 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
     phishing_result = detect_phishing(
         parsed_email, url_analysis, ip_analysis, auth_analysis, domain_analysis
     )
+
+    # Attachment analysis
+    attachments = parsed_email.get('attachments', [])
+    attachment_analysis = analyze_attachments(attachments) if attachments else {
+        'attachments': [],
+        'total_attachments': 0,
+        'dangerous_count': 0,
+        'total_risk_score': 0,
+        'average_risk_score': 0,
+    }
 
     # Threat scoring
     threat_score = calculate_threat_score(
@@ -218,12 +232,12 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
         'filename': filename,
         'file_hash': file_hash,
         'file_size': file_size,
-        'upload_time': datetime.utcnow().isoformat(),
+        'upload_time': datetime.now(UTC).isoformat(),
     }
     report = generate_forensic_report(
         case_id, parsed_email, email_info, header_analysis,
         auth_analysis, url_analysis, ip_analysis, domain_analysis,
-        phishing_result, threat_score, indicators,
+        phishing_result, threat_score, indicators, attachment_analysis,
     )
 
     # Save report JSON
@@ -235,13 +249,13 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
 
     # Build timeline
     timeline = [
-        {'step': 1, 'action': 'Email uploaded', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 2, 'action': 'Headers parsed', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 4, 'action': 'IP addresses identified', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 5, 'action': 'Email authentication checked', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 6, 'action': 'AI classification completed', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
-        {'step': 7, 'action': 'Threat score generated', 'status': 'completed', 'timestamp': datetime.utcnow().isoformat()},
+        {'step': 1, 'action': 'Email uploaded', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 2, 'action': 'Headers parsed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 3, 'action': 'URLs extracted and analyzed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 4, 'action': 'IP addresses identified', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 5, 'action': 'Email authentication checked', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 6, 'action': 'AI classification completed', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
+        {'step': 7, 'action': 'Threat score generated', 'status': 'completed', 'timestamp': datetime.now(UTC).isoformat()},
     ]
 
     return {
@@ -256,6 +270,7 @@ def run_analysis(case_id, file_path, filename, file_hash, file_size):
         'url_analysis': url_analysis,
         'ip_analysis': ip_analysis,
         'domain_analysis': domain_analysis,
+        'attachment_analysis': attachment_analysis,
         'phishing_detection': phishing_result,
         'threat_score': threat_score,
         'indicators': indicators,
@@ -300,6 +315,102 @@ def get_report(case_id):
 @app.route('/reports/<filename>')
 def serve_report(filename):
     return send_from_directory(REPORTS_FOLDER, filename)
+
+
+@app.route('/settings')
+def settings_page():
+    return render_template('settings.html')
+
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    return jsonify({
+        'apis': threat_intel.get_config_status(),
+        'scoring_weights': SCORING_WEIGHTS,
+    })
+
+
+@app.route('/api/train', methods=['POST'])
+def train():
+    try:
+        from ai.train_model import train_model
+        result = train_model()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/export/<case_id>/<fmt>', methods=['GET'])
+def export_report(case_id, fmt):
+    report_path = os.path.join(REPORTS_FOLDER, f'{case_id}_report.json')
+    if not os.path.exists(report_path):
+        return jsonify({'error': 'Report not found'}), 404
+
+    with open(report_path, 'r') as f:
+        report = json.load(f)
+
+    if fmt == 'json':
+        return export_report_json(report), 200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': f'attachment; filename=mailshield_report_{case_id[:8]}.json'
+        }
+    elif fmt == 'csv':
+        csv_data = export_report_csv(report)
+        return csv_data, 200, {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': f'attachment; filename=mailshield_report_{case_id[:8]}.csv'
+        }
+    elif fmt == 'ioc':
+        indicators = get_indicators(case_id)
+        ioc_data = export_indicators_json(indicators)
+        return ioc_data, 200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': f'attachment; filename=mailshield_iocs_{case_id[:8]}.json'
+        }
+    return jsonify({'error': 'Invalid format'}), 400
+
+
+@app.route('/api/threat-intel/ip/<ip_address>', methods=['GET'])
+def threat_intel_ip(ip_address):
+    result = threat_intel.check_ip(ip_address)
+    return jsonify(result)
+
+
+@app.route('/api/threat-intel/url', methods=['GET'])
+def threat_intel_url():
+    url = request.args.get('url', '')
+    if not url:
+        return jsonify({'error': 'URL parameter required'}), 400
+    result = threat_intel.check_url(url)
+    return jsonify(result)
+
+
+@app.route('/api/threat-intel/domain/<domain>', methods=['GET'])
+def threat_intel_domain(domain):
+    result = threat_intel.check_domain(domain)
+    return jsonify(result)
+
+
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    cases = get_all_cases()
+    total = len(cases)
+    critical = sum(1 for c in cases if c.get('threat_level') == 'CRITICAL')
+    high = sum(1 for c in cases if c.get('threat_level') == 'HIGH')
+    medium = sum(1 for c in cases if c.get('threat_level') == 'MEDIUM')
+    low = sum(1 for c in cases if c.get('threat_level') == 'LOW')
+    phishing = sum(1 for c in cases if c.get('ai_classification') in ['PHISHING', 'MALICIOUS'])
+    avg_score = sum(c.get('threat_score', 0) for c in cases) / total if total else 0
+
+    return jsonify({
+        'total_cases': total,
+        'critical': critical,
+        'high': high,
+        'medium': medium,
+        'low': low,
+        'phishing_detected': phishing,
+        'average_score': round(avg_score, 1),
+    })
 
 
 if __name__ == '__main__':

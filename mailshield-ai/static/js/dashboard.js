@@ -84,6 +84,9 @@ function renderDashboard(data, caseId) {
     document.getElementById('generateReport').addEventListener('click', () => {
         window.open(`/reports?case_id=${caseId}`, '_blank');
     });
+
+    // Charts
+    renderCharts(data);
 }
 
 function renderThreatScore(score, level, breakdown) {
@@ -301,6 +304,74 @@ function renderAIAnalysis(detection) {
             ${detection.indicators.map(i => `<li>${escapeHtml(i)}</li>`).join('')}
         </ul>
     `;
+}
+
+function renderCharts(data) {
+    // Risk Distribution Doughnut
+    const urlRiskCounts = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+    (data.url_analysis.urls || []).forEach(u => {
+        urlRiskCounts[u.risk_level] = (urlRiskCounts[u.risk_level] || 0) + 1;
+    });
+
+    const riskCtx = document.getElementById('riskChart');
+    if (riskCtx) {
+        new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical'],
+                datasets: [{
+                    data: [urlRiskCounts.LOW, urlRiskCounts.MEDIUM, urlRiskCounts.HIGH, urlRiskCounts.CRITICAL],
+                    backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+                    borderColor: '#1a1f35',
+                    borderWidth: 3,
+                }],
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 15 } },
+                },
+            },
+        });
+    }
+
+    // Threat Factors Bar Chart
+    const breakdown = data.threat_score.breakdown || [];
+    const factorsCtx = document.getElementById('factorsChart');
+    if (factorsCtx && breakdown.length > 0) {
+        new Chart(factorsCtx, {
+            type: 'bar',
+            data: {
+                labels: breakdown.map(b => b.factor.substring(0, 20)),
+                datasets: [{
+                    label: 'Points',
+                    data: breakdown.map(b => b.points),
+                    backgroundColor: breakdown.map(b => {
+                        if (b.points >= 15) return 'rgba(239, 68, 68, 0.7)';
+                        if (b.points >= 10) return 'rgba(249, 115, 22, 0.7)';
+                        return 'rgba(245, 158, 11, 0.7)';
+                    }),
+                    borderColor: breakdown.map(b => {
+                        if (b.points >= 15) return '#ef4444';
+                        if (b.points >= 10) return '#f97316';
+                        return '#f59e0b';
+                    }),
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'y',
+                scales: {
+                    x: { grid: { color: '#2a3050' }, ticks: { color: '#94a3b8' } },
+                    y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+                },
+                plugins: {
+                    legend: { display: false },
+                },
+            },
+        });
+    }
 }
 
 function escapeHtml(text) {

@@ -1,0 +1,27 @@
+From: alerts@microsft365-security.com
+To: victim@example.com
+Reply-To: helpdesk@outlook-verify.ml
+Subject: Microsoft 365: Unusual sign-in activity detected
+Date: Wed, 02 Sep 2026 18:07:32 +0000
+Message-ID: <7ad91ff961a64e24@microsft365-security.com>
+Return-Path: <bounce@microsft365-security.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Microsoft Outlook 16.0
+X-Originating-IP: [103.224.182.251]
+Authentication-Results: mx.example.com;
+    spf=fail domain of microsft365-security.com does not designate 103.224.182.251 as permitted sender;
+    dkim=fail header.d=microsft365-security.com;
+    dmarc=fail
+Received: from smtp.microsft365-security.com (smtp.microsft365-security.com [103.224.182.251])
+	by mx.example.com with ESMTP id a97eb69c6cc2
+	for <victim@example.com>; Wed, 02 Sep 2026 18:07:32 +0000
+
+<html><body style="font-family:Segoe UI,sans-serif;">
+<h2>Microsoft Account Security Notice</h2>
+<p>We detected a sign-in from an unrecognized device in Moscow, Russia.</p>
+<p>If this wasn't you, secure your account immediately by clicking below.</p>
+<p><a href="http://microsoft-365-verify.tk/security/check">REVIEW SIGN-IN ACTIVITY</a></p>
+<p>Device: Windows 10 / Chrome Browser<br>Location: Moscow, RU<br>IP: 185.220.101.45</p>
+</body></html>
